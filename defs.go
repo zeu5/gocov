@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package parser
+package gocov
 
 // Types and constants related to the output files files written
 // by code coverage tooling. When a coverage-instrumented binary

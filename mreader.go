@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package parser
+package gocov
 
 import (
 	"io"
 	"os"
 
-	bio "github.com/zeu5/gocov/parser/bio"
+	"github.com/zeu5/gocov/bio"
 )
 
 // This file contains the helper "MReader", a wrapper around bio plus

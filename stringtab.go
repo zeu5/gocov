@@ -1,4 +1,4 @@
-package parser
+package gocov
 
 // This package implements string table and reader utilities,
 // for use in emitting and reading/decoding coverage meta-data and

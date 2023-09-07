@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package parser
+package gocov
 
 // This package contains a simple "batch" allocator for allocating
 // coverage counters (slices of uint32 basically), for working with

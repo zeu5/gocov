@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package parser
+package gocov
 
 // This package contains APIs and helpers for decoding a single package's
 // meta data "blob" emitted by the compiler when coverage instrumentation

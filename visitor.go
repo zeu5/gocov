@@ -1,4 +1,4 @@
-package parser
+package gocov
 
 import (
 	"encoding/hex"

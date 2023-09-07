@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package parser
+package gocov
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"io"
 	"os"
 
-	bio "github.com/zeu5/gocov/parser/bio"
+	"github.com/zeu5/gocov/bio"
 )
 
 // CovDataReader is a general-purpose helper/visitor object for
