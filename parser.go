@@ -32,7 +32,6 @@ type FuncUnit struct {
 	StLine, StCol uint32
 	EnLine, EnCol uint32
 	NxStmts       uint32
-	Parent        uint32
 	Count         uint32
 }
 

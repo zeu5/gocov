@@ -141,13 +141,13 @@ func (d *covDataVisitor) VisitFunc(pkgIdx uint32, fnIdx uint32, fd *FuncDesc) {
 			count = counters[i]
 		}
 
-		fnData.Units = append(fnData.Units, &FuncUnit{
+		fnData.Units[i] = &FuncUnit{
 			StLine:  u.StLine,
 			EnLine:  u.EnLine,
 			StCol:   u.StCol,
 			EnCol:   u.EnCol,
 			NxStmts: u.NxStmts,
 			Count:   count,
-		})
+		}
 	}
 }
