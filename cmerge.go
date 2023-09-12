@@ -9,19 +9,19 @@ import (
 	"math"
 )
 
-// Merger provides state and methods to help manage the process of
+// merger provides state and methods to help manage the process of
 // merging together coverage counter data for a given function, for
 // tools that need to implicitly merge counter as they read multiple
 // coverage counter data files.
-type Merger struct {
-	cmode    CounterMode
+type merger struct {
+	cmode    counterMode
 	cgran    CounterGranularity
 	overflow bool
 }
 
 // MergeCounters takes the counter values in 'src' and merges them
 // into 'dst' according to the correct counter mode.
-func (m *Merger) MergeCounters(dst, src []uint32) (error, bool) {
+func (m *merger) MergeCounters(dst, src []uint32) (error, bool) {
 	if len(src) != len(dst) {
 		return fmt.Errorf("merging counters: len(dst)=%d len(src)=%d", len(dst), len(src)), false
 	}
@@ -44,7 +44,7 @@ func (m *Merger) MergeCounters(dst, src []uint32) (error, bool) {
 // Saturating add does a saturating addition of 'dst' and 'src',
 // returning added value or math.MaxUint32 if there is an overflow.
 // Overflows are recorded in case the client needs to track them.
-func (m *Merger) SaturatingAdd(dst, src uint32) uint32 {
+func (m *merger) SaturatingAdd(dst, src uint32) uint32 {
 	result, overflow := SaturatingAdd(dst, src)
 	if overflow {
 		m.overflow = true
@@ -70,7 +70,7 @@ func SaturatingAdd(dst, src uint32) (uint32, bool) {
 // data files from different binaries, where we're combining data from
 // more than one meta-data file, we need to check for mode/granularity
 // clashes.
-func (cm *Merger) SetModeAndGranularity(cmode CounterMode, cgran CounterGranularity) error {
+func (cm *merger) SetModeAndGranularity(cmode counterMode, cgran CounterGranularity) error {
 	// Collect counter mode and granularity so as to detect clashes.
 	if cm.cmode != CtrModeInvalid {
 		if cm.cmode != cmode {
@@ -85,16 +85,16 @@ func (cm *Merger) SetModeAndGranularity(cmode CounterMode, cgran CounterGranular
 	return nil
 }
 
-func (cm *Merger) ResetModeAndGranularity() {
+func (cm *merger) ResetModeAndGranularity() {
 	cm.cmode = CtrModeInvalid
 	cm.cgran = CtrGranularityInvalid
 	cm.overflow = false
 }
 
-func (cm *Merger) Mode() CounterMode {
+func (cm *merger) Mode() counterMode {
 	return cm.cmode
 }
 
-func (cm *Merger) Granularity() CounterGranularity {
+func (cm *merger) Granularity() CounterGranularity {
 	return cm.cgran
 }

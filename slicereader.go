@@ -13,21 +13,21 @@ import (
 // reading values from a byte slice that may or may not be backed
 // by a read-only mmap'd region.
 
-type Reader struct {
+type reader struct {
 	b        []byte
 	readonly bool
 	off      int64
 }
 
-func NewReader(b []byte, readonly bool) *Reader {
-	r := Reader{
+func newReader(b []byte, readonly bool) *reader {
+	r := reader{
 		b:        b,
 		readonly: readonly,
 	}
 	return &r
 }
 
-func (r *Reader) Read(b []byte) (int, error) {
+func (r *reader) Read(b []byte) (int, error) {
 	amt := len(b)
 	toread := r.b[r.off:]
 	if len(toread) < amt {
@@ -38,35 +38,35 @@ func (r *Reader) Read(b []byte) (int, error) {
 	return amt, nil
 }
 
-func (r *Reader) SeekTo(off int64) {
+func (r *reader) SeekTo(off int64) {
 	r.off = off
 }
 
-func (r *Reader) Offset() int64 {
+func (r *reader) Offset() int64 {
 	return r.off
 }
 
-func (r *Reader) ReadUint8() uint8 {
+func (r *reader) ReadUint8() uint8 {
 	rv := uint8(r.b[int(r.off)])
 	r.off += 1
 	return rv
 }
 
-func (r *Reader) ReadUint32() uint32 {
+func (r *reader) ReadUint32() uint32 {
 	end := int(r.off) + 4
 	rv := binary.LittleEndian.Uint32(r.b[int(r.off):end:end])
 	r.off += 4
 	return rv
 }
 
-func (r *Reader) ReadUint64() uint64 {
+func (r *reader) ReadUint64() uint64 {
 	end := int(r.off) + 8
 	rv := binary.LittleEndian.Uint64(r.b[int(r.off):end:end])
 	r.off += 8
 	return rv
 }
 
-func (r *Reader) ReadULEB128() (value uint64) {
+func (r *reader) ReadULEB128() (value uint64) {
 	var shift uint
 
 	for {
@@ -81,7 +81,7 @@ func (r *Reader) ReadULEB128() (value uint64) {
 	return
 }
 
-func (r *Reader) ReadString(len int64) string {
+func (r *reader) ReadString(len int64) string {
 	b := r.b[r.off : r.off+len]
 	r.off += len
 	if r.readonly {

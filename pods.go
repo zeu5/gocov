@@ -12,7 +12,7 @@ import (
 	"sort"
 )
 
-// Pod encapsulates a set of files emitted during the executions of a
+// pod encapsulates a set of files emitted during the executions of a
 // coverage-instrumented binary. Each pod contains a single meta-data
 // file, and then 0 or more counter data files that refer to that
 // meta-data file. Pods are intended to simplify processing of
@@ -25,25 +25,25 @@ import (
 // data file (within the slice of input dirs handed to CollectPods).
 // The ProcessIDs field will be populated with the process ID of each
 // data file in the CounterDataFiles slice.
-type Pod struct {
+type pod struct {
 	MetaFile         string
 	CounterDataFiles []string
 }
 
-// CollectPods visits the files contained within the directories in
+// collectPods visits the files contained within the directories in
 // the list 'dirs', collects any coverage-related files, partitions
 // them into pods, and returns a list of the pods to the caller, along
 // with an error if something went wrong during directory/file
 // reading.
 //
-// CollectPods skips over any file that is not related to coverage
+// collectPods skips over any file that is not related to coverage
 // (e.g. avoids looking at things that are not meta-data files or
-// counter-data files). CollectPods also skips over 'orphaned' counter
+// counter-data files). collectPods also skips over 'orphaned' counter
 // data files (e.g. counter data files for which we can't find the
-// corresponding meta-data file). If "warn" is true, CollectPods will
+// corresponding meta-data file). If "warn" is true, collectPods will
 // issue warnings to stderr when it encounters non-fatal problems (for
 // orphans or a directory with no meta-data files).
-func CollectPods(dir string) ([]Pod, error) {
+func collectPods(dir string) ([]pod, error) {
 	files := []string{}
 	dents, err := os.ReadDir(dir)
 	if err != nil {
@@ -96,8 +96,8 @@ type protoPod struct {
 // first pod (with meta-file M1) will have four counter data files
 // (C1, C2, C3, C4) and the second pod will have two counter data files
 // (C5, C6).
-func collectPodsImpl(files []string) []Pod {
-	metaRE := regexp.MustCompile(fmt.Sprintf(`^%s\.(\S+)$`, MetaFilePref))
+func collectPodsImpl(files []string) []pod {
+	metaRE := regexp.MustCompile(fmt.Sprintf(`^%s\.(\S+)$`, metaFilePref))
 	mm := make(map[string]protoPod)
 	for _, f := range files {
 		base := filepath.Base(f)
@@ -113,7 +113,7 @@ func collectPodsImpl(files []string) []Pod {
 			// the duplicate.
 		}
 	}
-	counterRE := regexp.MustCompile(fmt.Sprintf(CounterFileRegexp, CounterFilePref))
+	counterRE := regexp.MustCompile(fmt.Sprintf(counterFileRegexp, counterFilePref))
 	for _, f := range files {
 		base := filepath.Base(f)
 		if m := counterRE.FindStringSubmatch(base); m != nil {
@@ -124,17 +124,17 @@ func collectPodsImpl(files []string) []Pod {
 			}
 		}
 	}
-	pods := make([]Pod, 0, len(mm))
-	for _, p := range mm {
-		sort.Slice(p.elements, func(i, j int) bool {
-			return p.elements[i] < p.elements[j]
+	pods := make([]pod, 0, len(mm))
+	for _, pp := range mm {
+		sort.Slice(pp.elements, func(i, j int) bool {
+			return pp.elements[i] < pp.elements[j]
 		})
-		pod := Pod{
-			MetaFile:         p.mf,
-			CounterDataFiles: make([]string, 0, len(p.elements)),
+		p := pod{
+			MetaFile:         pp.mf,
+			CounterDataFiles: make([]string, 0, len(pp.elements)),
 		}
-		pod.CounterDataFiles = append(pod.CounterDataFiles, p.elements...)
-		pods = append(pods, pod)
+		p.CounterDataFiles = append(p.CounterDataFiles, pp.elements...)
+		pods = append(pods, p)
 	}
 	sort.Slice(pods, func(i, j int) bool {
 		return pods[i].MetaFile < pods[j].MetaFile

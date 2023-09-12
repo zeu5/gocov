@@ -17,26 +17,26 @@ import (
 // Since bio.SliceOS() is not guaranteed to succeed, MReader falls back
 // on explicit reads + seeks provided by bio.Reader if needed.
 
-type MReader struct {
+type mReader struct {
 	rdr      *bio.Reader
 	fileView []byte
 	off      int64
 }
 
-func NewMreader(f *os.File) (*MReader, error) {
+func newMreader(f *os.File) (*mReader, error) {
 	rdr := bio.NewReader(f)
 	fi, err := f.Stat()
 	if err != nil {
 		return nil, err
 	}
-	r := MReader{
+	r := mReader{
 		rdr:      rdr,
 		fileView: rdr.SliceRO(uint64(fi.Size())),
 	}
 	return &r, nil
 }
 
-func (r *MReader) Read(p []byte) (int, error) {
+func (r *mReader) Read(p []byte) (int, error) {
 	if r.fileView != nil {
 		amt := len(p)
 		toread := r.fileView[r.off:]
@@ -53,7 +53,7 @@ func (r *MReader) Read(p []byte) (int, error) {
 	return io.ReadFull(r.rdr, p)
 }
 
-func (r *MReader) ReadByte() (byte, error) {
+func (r *mReader) ReadByte() (byte, error) {
 	if r.fileView != nil {
 		toread := r.fileView[r.off:]
 		if len(toread) < 1 {
@@ -66,7 +66,7 @@ func (r *MReader) ReadByte() (byte, error) {
 	return r.rdr.ReadByte()
 }
 
-func (r *MReader) Seek(offset int64, whence int) (int64, error) {
+func (r *mReader) Seek(offset int64, whence int) (int64, error) {
 	if r.fileView == nil {
 		return r.rdr.MustSeek(offset, whence), nil
 	}

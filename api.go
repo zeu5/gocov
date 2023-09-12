@@ -59,13 +59,13 @@ func GetCoverage(c CoverageConfig) (*Coverage, error) {
 
 func (c *Coverage) GetProfiles() []cover.Profile {
 	fileProfiles := make(map[string]cover.Profile)
-	for _, pod := range c.data.PodData {
-		for _, pack := range pod.Packages {
+	for _, p := range c.data.PodData {
+		for _, pack := range p.Packages {
 			for _, fn := range pack.Funcs {
 				if _, ok := fileProfiles[fn.SrcFile]; !ok {
 					fileProfiles[fn.SrcFile] = cover.Profile{
 						FileName: fn.SrcFile,
-						Mode:     pod.CounterMode.String(),
+						Mode:     p.CounterMode.String(),
 						Blocks:   make([]cover.ProfileBlock, 0),
 					}
 				}
@@ -98,8 +98,8 @@ func (c *Coverage) GetProfiles() []cover.Profile {
 func (c *Coverage) GetPercent() float64 {
 	totalStmts := 0
 	covered := 0
-	for _, pod := range c.data.PodData {
-		for _, pack := range pod.Packages {
+	for _, p := range c.data.PodData {
+		for _, pack := range p.Packages {
 			for _, fn := range pack.Funcs {
 				for _, u := range fn.Units {
 					nx := int(u.NxStmts)

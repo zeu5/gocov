@@ -16,15 +16,15 @@ type pkfunc struct {
 // of the grubby details of reading coverage data files.
 type covDataVisitor struct {
 	// for batch allocation of counter arrays
-	BatchCounterAlloc
+	batchCounterAlloc
 
 	// counter merging state + methods
-	cm *Merger
+	cm *merger
 
 	// 'mm' stores values read from a counter data file; the pkfunc key
 	// is a pkgid/funcid pair that uniquely identifies a function in
 	// instrumented application.
-	mm map[pkfunc]FuncPayload
+	mm map[pkfunc]funcPayload
 	// pkm maps package ID to the number of functions in the package
 	// with that ID. It is used to report inconsistencies in counter
 	// data (for example, a counter data entry with pkgid=N funcid=10
@@ -36,18 +36,18 @@ type covDataVisitor struct {
 	data *CoverageData
 }
 
-func (d *covDataVisitor) BeginPod(p Pod) {
-	d.mm = make(map[pkfunc]FuncPayload)
+func (d *covDataVisitor) BeginPod(p pod) {
+	d.mm = make(map[pkfunc]funcPayload)
 }
 
-func (d *covDataVisitor) VisitFuncCounterData(data FuncPayload) error {
+func (d *covDataVisitor) VisitFuncCounterData(data funcPayload) error {
 	if nf, ok := d.pkm[data.PkgIdx]; !ok || data.FuncIdx > nf {
 		return nil
 	}
 	key := pkfunc{pk: data.PkgIdx, fcn: data.FuncIdx}
 	val, ok := d.mm[key]
 	if !ok {
-		val = FuncPayload{}
+		val = funcPayload{}
 	}
 
 	if len(val.Counters) < len(data.Counters) {
@@ -63,7 +63,7 @@ func (d *covDataVisitor) VisitFuncCounterData(data FuncPayload) error {
 	return nil
 }
 
-func (d *covDataVisitor) VisitMetaDataFile(mfr *CoverageMetaFileReader) error {
+func (d *covDataVisitor) VisitMetaDataFile(mfr *coverageMetaFileReader) error {
 	newgran := mfr.CounterGranularity()
 	newmode := mfr.CounterMode()
 
@@ -88,7 +88,7 @@ func (d *covDataVisitor) VisitMetaDataFile(mfr *CoverageMetaFileReader) error {
 	np := uint32(mfr.NumPackages())
 	payload := []byte{}
 	for pkIdx := uint32(0); pkIdx < np; pkIdx++ {
-		var pd *CoverageMetaDataDecoder
+		var pd *coverageMetaDataDecoder
 		var err error
 		pd, payload, err = mfr.GetPackageDecoder(pkIdx, payload)
 		if err != nil {
@@ -105,7 +105,7 @@ func (d *covDataVisitor) VisitMetaDataFile(mfr *CoverageMetaFileReader) error {
 	return nil
 }
 
-func (d *covDataVisitor) BeginPackage(pd *CoverageMetaDataDecoder, pkgIdx uint32) {
+func (d *covDataVisitor) BeginPackage(pd *coverageMetaDataDecoder, pkgIdx uint32) {
 	podData := d.data.PodData[d.podHash]
 	packageData, ok := podData.Packages[pkgIdx]
 	if ok {
@@ -115,7 +115,7 @@ func (d *covDataVisitor) BeginPackage(pd *CoverageMetaDataDecoder, pkgIdx uint32
 	}
 }
 
-func (d *covDataVisitor) VisitFunc(pkgIdx uint32, fnIdx uint32, fd *FuncDesc) {
+func (d *covDataVisitor) VisitFunc(pkgIdx uint32, fnIdx uint32, fd *funcDesc) {
 	var counters []uint32
 	key := pkfunc{pk: pkgIdx, fcn: fnIdx}
 	v, haveCounters := d.mm[key]

@@ -52,20 +52,20 @@ package gocov
 // file-level string table is expected to be very short (most strings
 // will be in the meta-data blobs themselves).
 
-// CovMetaMagic holds the magic string for a meta-data file.
-var CovMetaMagic = [4]byte{'\x00', '\x63', '\x76', '\x6d'}
+// covMetaMagic holds the magic string for a meta-data file.
+var covMetaMagic = [4]byte{'\x00', '\x63', '\x76', '\x6d'}
 
-// MetaFilePref is a prefix used when emitting meta-data files; these
+// metaFilePref is a prefix used when emitting meta-data files; these
 // files are of the form "covmeta.<hash>", where hash is a hash
 // computed from the hashes of all the package meta-data symbols in
 // the program.
-const MetaFilePref = "covmeta"
+const metaFilePref = "covmeta"
 
-// MetaFileVersion contains the current (most recent) meta-data file version.
-const MetaFileVersion = 1
+// metaFileVersion contains the current (most recent) meta-data file version.
+const metaFileVersion = 1
 
-// MetaFileHeader stores file header information for a meta-data file.
-type MetaFileHeader struct {
+// metaFileHeader stores file header information for a meta-data file.
+type metaFileHeader struct {
 	Magic        [4]byte
 	Version      uint32
 	TotalLength  uint64
@@ -73,15 +73,15 @@ type MetaFileHeader struct {
 	MetaFileHash [16]byte
 	StrTabOffset uint32
 	StrTabLength uint32
-	CMode        CounterMode
+	CMode        counterMode
 	CGranularity CounterGranularity
 	_            [6]byte // padding
 }
 
-// MetaSymbolHeader stores header information for a single
+// metaSymbolHeader stores header information for a single
 // meta-data blob, e.g. the coverage meta-data payload
 // computed for a given Go package.
-type MetaSymbolHeader struct {
+type metaSymbolHeader struct {
 	Length     uint32 // size of meta-symbol payload in bytes
 	PkgName    uint32 // string table index
 	PkgPath    uint32 // string table index
@@ -93,7 +93,7 @@ type MetaSymbolHeader struct {
 	NumFuncs   uint32
 }
 
-const CovMetaHeaderSize = 16 + 4 + 4 + 4 + 4 + 4 + 4 + 4 // keep in sync with above
+const covMetaHeaderSize = 16 + 4 + 4 + 4 + 4 + 4 + 4 + 4 // keep in sync with above
 
 // As an example, consider the following Go package:
 //
@@ -153,19 +153,19 @@ const CovMetaHeaderSize = 16 + 4 + 4 + 4 + 4 + 4 + 4 + 4 // keep in sync with ab
 
 // The following types and constants used by the meta-data encoder/decoder.
 
-// FuncDesc encapsulates the meta-data definitions for a single Go function.
+// funcDesc encapsulates the meta-data definitions for a single Go function.
 // This version assumes that we're looking at a function before inlining;
 // if we want to capture a post-inlining view of the world, the
 // representations of source positions would need to be a good deal more
 // complicated.
-type FuncDesc struct {
+type funcDesc struct {
 	Funcname string
 	Srcfile  string
-	Units    []CoverableUnit
+	Units    []coverableUnit
 	Lit      bool // true if this is a function literal
 }
 
-// CoverableUnit describes the source characteristics of a single
+// coverableUnit describes the source characteristics of a single
 // program unit for which we want to gather coverage info. Coverable
 // units are either "simple" or "intraline"; a "simple" coverable unit
 // corresponds to a basic block (region of straight-line code with no
@@ -186,19 +186,19 @@ type FuncDesc struct {
 //
 // Note: in the initial version of the coverage revamp, only simple
 // units will be in use.
-type CoverableUnit struct {
+type coverableUnit struct {
 	StLine, StCol uint32
 	EnLine, EnCol uint32
 	NxStmts       uint32
 	Parent        uint32
 }
 
-// CounterMode tracks the "flavor" of the coverage counters being
+// counterMode tracks the "flavor" of the coverage counters being
 // used in a given coverage-instrumented program.
-type CounterMode uint8
+type counterMode uint8
 
 const (
-	CtrModeInvalid  CounterMode = iota
+	CtrModeInvalid  counterMode = iota
 	CtrModeSet                  // "set" mode
 	CtrModeCount                // "count" mode
 	CtrModeAtomic               // "atomic" mode
@@ -206,7 +206,7 @@ const (
 	CtrModeTestMain             // testmain pseudo-mode
 )
 
-func (cm CounterMode) String() string {
+func (cm counterMode) String() string {
 	switch cm {
 	case CtrModeSet:
 		return "set"
@@ -222,8 +222,8 @@ func (cm CounterMode) String() string {
 	return "<invalid>"
 }
 
-func ParseCounterMode(mode string) CounterMode {
-	var cm CounterMode
+func ParseCounterMode(mode string) counterMode {
+	var cm counterMode
 	switch mode {
 	case "set":
 		cm = CtrModeSet
@@ -270,23 +270,23 @@ func (cm CounterGranularity) String() string {
 // more "segments" (each segment representing a given run or partial
 // run of a give binary) followed by a footer.
 
-// CovCounterMagic holds the magic string for a coverage counter-data file.
-var CovCounterMagic = [4]byte{'\x00', '\x63', '\x77', '\x6d'}
+// covCounterMagic holds the magic string for a coverage counter-data file.
+var covCounterMagic = [4]byte{'\x00', '\x63', '\x77', '\x6d'}
 
-// CounterFileVersion stores the most recent counter data file version.
-const CounterFileVersion = 1
+// counterFileVersion stores the most recent counter data file version.
+const counterFileVersion = 1
 
-// CounterFileHeader stores files header information for a counter-data file.
-type CounterFileHeader struct {
+// counterFileHeader stores files header information for a counter-data file.
+type counterFileHeader struct {
 	Magic     [4]byte
 	Version   uint32
 	MetaHash  [16]byte
-	CFlavor   CounterFlavor
+	CFlavor   counterFlavor
 	BigEndian bool
 	_         [6]byte // padding
 }
 
-// CounterSegmentHeader encapsulates information about a specific
+// counterSegmentHeader encapsulates information about a specific
 // segment in a counter data file, which at the moment contains
 // counters data from a single execution of a coverage-instrumented
 // program. Following the segment header will be the string table and
@@ -303,38 +303,38 @@ type CounterFileHeader struct {
 // future the args table may also include things like GOOS/GOARCH
 // values, and/or tags indicating which tests were run to generate the
 // counter data.
-type CounterSegmentHeader struct {
+type counterSegmentHeader struct {
 	FcnEntries uint64
 	StrTabLen  uint32
 	ArgsLen    uint32
 }
 
-// CounterFileFooter appears at the tail end of a counter data file,
+// counterFileFooter appears at the tail end of a counter data file,
 // and stores the number of segments it contains.
-type CounterFileFooter struct {
+type counterFileFooter struct {
 	Magic       [4]byte
 	_           [4]byte // padding
 	NumSegments uint32
 	_           [4]byte // padding
 }
 
-// CounterFilePref is the file prefix used when emitting coverage data
+// counterFilePref is the file prefix used when emitting coverage data
 // output files. CounterFileTemplate describes the format of the file
 // name: prefix followed by meta-file hash followed by process ID
 // followed by emit UnixNanoTime.
-const CounterFilePref = "covcounters"
-const CounterFileRegexp = `^%s\.(\S+)\.(\d+)\.(\d+)+$`
+const counterFilePref = "covcounters"
+const counterFileRegexp = `^%s\.(\S+)\.(\d+)\.(\d+)+$`
 
-// CounterFlavor describes how function and counters are
+// counterFlavor describes how function and counters are
 // stored/represented in the counter section of the file.
-type CounterFlavor uint8
+type counterFlavor uint8
 
 const (
 	// "Raw" representation: all values (pkg ID, func ID, num counters,
 	// and counters themselves) are stored as uint32's.
-	CtrRaw CounterFlavor = iota + 1
+	ctrRaw counterFlavor = iota + 1
 
 	// "ULeb" representation: all values (pkg ID, func ID, num counters,
 	// and counters themselves) are stored with ULEB128 encoding.
-	CtrULeb128
+	ctrULeb128
 )

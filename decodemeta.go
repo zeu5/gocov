@@ -19,17 +19,17 @@ import (
 
 // See comments in the encodecovmeta package for details on the format.
 
-type CoverageMetaDataDecoder struct {
-	r      *Reader
-	hdr    MetaSymbolHeader
-	strtab *SReader
+type coverageMetaDataDecoder struct {
+	r      *reader
+	hdr    metaSymbolHeader
+	strtab *sReader
 	tmp    []byte
 	debug  bool
 }
 
-func NewCoverageMetaDataDecoder(b []byte, readonly bool) (*CoverageMetaDataDecoder, error) {
-	slr := NewReader(b, readonly)
-	x := &CoverageMetaDataDecoder{
+func newCoverageMetaDataDecoder(b []byte, readonly bool) (*coverageMetaDataDecoder, error) {
+	slr := newReader(b, readonly)
+	x := &coverageMetaDataDecoder{
 		r:   slr,
 		tmp: make([]byte, 0, 256),
 	}
@@ -42,7 +42,7 @@ func NewCoverageMetaDataDecoder(b []byte, readonly bool) (*CoverageMetaDataDecod
 	return x, nil
 }
 
-func (d *CoverageMetaDataDecoder) readHeader() error {
+func (d *coverageMetaDataDecoder) readHeader() error {
 	if err := binary.Read(d.r, binary.LittleEndian, &d.hdr); err != nil {
 		return err
 	}
@@ -52,42 +52,42 @@ func (d *CoverageMetaDataDecoder) readHeader() error {
 	return nil
 }
 
-func (d *CoverageMetaDataDecoder) readStringTable() error {
+func (d *coverageMetaDataDecoder) readStringTable() error {
 	// Seek to the correct location to read the string table.
-	stringTableLocation := int64(CovMetaHeaderSize + 4*d.hdr.NumFuncs)
+	stringTableLocation := int64(covMetaHeaderSize + 4*d.hdr.NumFuncs)
 	d.r.SeekTo(stringTableLocation)
 
 	// Read the table itself.
-	d.strtab = NewSReader(d.r)
+	d.strtab = newSReader(d.r)
 	d.strtab.Read()
 	return nil
 }
 
-func (d *CoverageMetaDataDecoder) PackagePath() string {
+func (d *coverageMetaDataDecoder) PackagePath() string {
 	return d.strtab.Get(d.hdr.PkgPath)
 }
 
-func (d *CoverageMetaDataDecoder) PackageName() string {
+func (d *coverageMetaDataDecoder) PackageName() string {
 	return d.strtab.Get(d.hdr.PkgName)
 }
 
-func (d *CoverageMetaDataDecoder) ModulePath() string {
+func (d *coverageMetaDataDecoder) ModulePath() string {
 	return d.strtab.Get(d.hdr.ModulePath)
 }
 
-func (d *CoverageMetaDataDecoder) NumFuncs() uint32 {
+func (d *coverageMetaDataDecoder) NumFuncs() uint32 {
 	return d.hdr.NumFuncs
 }
 
 // ReadFunc reads the coverage meta-data for the function with index
 // 'findex', filling it into the FuncDesc pointed to by 'f'.
-func (d *CoverageMetaDataDecoder) ReadFunc(fidx uint32, f *FuncDesc) error {
+func (d *coverageMetaDataDecoder) ReadFunc(fidx uint32, f *funcDesc) error {
 	if fidx >= d.hdr.NumFuncs {
 		return fmt.Errorf("illegal function index")
 	}
 
 	// Seek to the correct location to read the function offset and read it.
-	funcOffsetLocation := int64(CovMetaHeaderSize + 4*fidx)
+	funcOffsetLocation := int64(covMetaHeaderSize + 4*fidx)
 	d.r.SeekTo(funcOffsetLocation)
 	foff := d.r.ReadUint32()
 
@@ -110,11 +110,11 @@ func (d *CoverageMetaDataDecoder) ReadFunc(fidx uint32, f *FuncDesc) error {
 	// Now the units
 	f.Units = f.Units[:0]
 	if cap(f.Units) < int(numUnits) {
-		f.Units = make([]CoverableUnit, 0, numUnits)
+		f.Units = make([]coverableUnit, 0, numUnits)
 	}
 	for k := uint32(0); k < numUnits; k++ {
 		f.Units = append(f.Units,
-			CoverableUnit{
+			coverableUnit{
 				StLine:  uint32(d.r.ReadULEB128()),
 				StCol:   uint32(d.r.ReadULEB128()),
 				EnLine:  uint32(d.r.ReadULEB128()),
@@ -133,28 +133,28 @@ func (d *CoverageMetaDataDecoder) ReadFunc(fidx uint32, f *FuncDesc) error {
 // top-level info (counter mode, number of packages) and then a
 // separate self-contained meta-data section for each Go package.
 
-// CoverageMetaFileReader provides state and methods for reading
+// coverageMetaFileReader provides state and methods for reading
 // a meta-data file from a code coverage run.
-type CoverageMetaFileReader struct {
+type coverageMetaFileReader struct {
 	f          io.ReadSeeker
-	hdr        MetaFileHeader
+	hdr        metaFileHeader
 	tmp        []byte
 	pkgOffsets []uint64
 	pkgLengths []uint64
-	strtab     *SReader
+	strtab     *sReader
 	fileRdr    *bufio.Reader
 	fileView   []byte
 	debug      bool
 }
 
-// NewCoverageMetaFileReader returns a new helper object for reading
+// newCoverageMetaFileReader returns a new helper object for reading
 // the coverage meta-data output file 'f'. The param 'fileView' is a
 // read-only slice containing the contents of 'f' obtained by mmap'ing
 // the file read-only; 'fileView' may be nil, in which case the helper
 // will read the contents of the file using regular file Read
 // operations.
-func NewCoverageMetaFileReader(reader io.ReadSeeker, fileView []byte) (*CoverageMetaFileReader, error) {
-	r := &CoverageMetaFileReader{
+func newCoverageMetaFileReader(reader io.ReadSeeker, fileView []byte) (*coverageMetaFileReader, error) {
+	r := &coverageMetaFileReader{
 		fileRdr:  bufio.NewReader(reader),
 		f:        reader,
 		fileView: fileView,
@@ -167,7 +167,7 @@ func NewCoverageMetaFileReader(reader io.ReadSeeker, fileView []byte) (*Coverage
 	return r, nil
 }
 
-func (r *CoverageMetaFileReader) readFileHeader() error {
+func (r *coverageMetaFileReader) readFileHeader() error {
 	var err error
 
 	// Read file header.
@@ -177,15 +177,15 @@ func (r *CoverageMetaFileReader) readFileHeader() error {
 
 	// Verify magic string
 	m := r.hdr.Magic
-	g := CovMetaMagic
+	g := covMetaMagic
 	if m[0] != g[0] || m[1] != g[1] || m[2] != g[2] || m[3] != g[3] {
 		return fmt.Errorf("invalid meta-data file magic string")
 	}
 
 	// Vet the version. If this is a meta-data file from the future,
 	// we won't be able to read it.
-	if r.hdr.Version > MetaFileVersion {
-		return fmt.Errorf("meta-data file withn unknown version %d (expected %d)", r.hdr.Version, MetaFileVersion)
+	if r.hdr.Version > metaFileVersion {
+		return fmt.Errorf("meta-data file withn unknown version %d (expected %d)", r.hdr.Version, metaFileVersion)
 	}
 
 	// Read package offsets for good measure
@@ -219,8 +219,8 @@ func (r *CoverageMetaFileReader) readFileHeader() error {
 	if nr != int(r.hdr.StrTabLength) {
 		return fmt.Errorf("error: short read on string table")
 	}
-	slr := NewReader(b, false /* not readonly */)
-	r.strtab = NewSReader(slr)
+	slr := newReader(b, false /* not readonly */)
+	r.strtab = newSReader(slr)
 	r.strtab.Read()
 
 	if r.debug {
@@ -230,7 +230,7 @@ func (r *CoverageMetaFileReader) readFileHeader() error {
 	return nil
 }
 
-func (r *CoverageMetaFileReader) rdUint64() (uint64, error) {
+func (r *coverageMetaFileReader) rdUint64() (uint64, error) {
 	r.tmp = r.tmp[:0]
 	r.tmp = append(r.tmp, make([]byte, 8)...)
 	n, err := r.fileRdr.Read(r.tmp)
@@ -246,28 +246,28 @@ func (r *CoverageMetaFileReader) rdUint64() (uint64, error) {
 
 // NumPackages returns the number of packages for which this file
 // contains meta-data.
-func (r *CoverageMetaFileReader) NumPackages() uint64 {
+func (r *coverageMetaFileReader) NumPackages() uint64 {
 	return r.hdr.Entries
 }
 
 // CounterMode returns the counter mode (set, count, atomic) used
 // when building for coverage for the program that produce this
 // meta-data file.
-func (r *CoverageMetaFileReader) CounterMode() CounterMode {
+func (r *coverageMetaFileReader) CounterMode() counterMode {
 	return r.hdr.CMode
 }
 
 // CounterMode returns the counter granularity (single counter per
 // function, or counter per block) selected when building for coverage
 // for the program that produce this meta-data file.
-func (r *CoverageMetaFileReader) CounterGranularity() CounterGranularity {
+func (r *coverageMetaFileReader) CounterGranularity() CounterGranularity {
 	return r.hdr.CGranularity
 }
 
 // FileHash returns the hash computed for all of the package meta-data
 // blobs. Coverage counter data files refer to this hash, and the
 // hash will be encoded into the meta-data file name.
-func (r *CoverageMetaFileReader) FileHash() [16]byte {
+func (r *coverageMetaFileReader) FileHash() [16]byte {
 	return r.hdr.MetaFileHash
 }
 
@@ -278,7 +278,7 @@ func (r *CoverageMetaFileReader) FileHash() [16]byte {
 // 'payloadbuf' will be written to (or if it is not of sufficient
 // size, a new buffer will be allocated). Return value is the decoder,
 // a byte slice with the encoded meta-data, and an error.
-func (r *CoverageMetaFileReader) GetPackageDecoder(pkIdx uint32, payloadbuf []byte) (*CoverageMetaDataDecoder, []byte, error) {
+func (r *coverageMetaFileReader) GetPackageDecoder(pkIdx uint32, payloadbuf []byte) (*coverageMetaDataDecoder, []byte, error) {
 	pp, err := r.GetPackagePayload(pkIdx, payloadbuf)
 	if r.debug {
 		fmt.Fprintf(os.Stderr, "=-= pkidx=%d payload length is %d hash=%s\n",
@@ -287,7 +287,7 @@ func (r *CoverageMetaFileReader) GetPackageDecoder(pkIdx uint32, payloadbuf []by
 	if err != nil {
 		return nil, nil, err
 	}
-	mdd, err := NewCoverageMetaDataDecoder(pp, r.fileView != nil)
+	mdd, err := newCoverageMetaDataDecoder(pp, r.fileView != nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -301,7 +301,7 @@ func (r *CoverageMetaFileReader) GetPackageDecoder(pkIdx uint32, payloadbuf []by
 // 'payloadbuf' will be written to (or if it is not of sufficient
 // size, a new buffer will be allocated). Return value is the decoder,
 // a byte slice with the encoded meta-data, and an error.
-func (r *CoverageMetaFileReader) GetPackagePayload(pkIdx uint32, payloadbuf []byte) ([]byte, error) {
+func (r *coverageMetaFileReader) GetPackagePayload(pkIdx uint32, payloadbuf []byte) ([]byte, error) {
 
 	// Determine correct offset/length.
 	if uint64(pkIdx) >= r.hdr.Entries {

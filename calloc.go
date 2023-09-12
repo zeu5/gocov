@@ -10,11 +10,11 @@ package gocov
 // live/dead over the same time period, so a good fit for batch
 // allocation.
 
-type BatchCounterAlloc struct {
+type batchCounterAlloc struct {
 	pool []uint32
 }
 
-func (ca *BatchCounterAlloc) AllocateCounters(n int) []uint32 {
+func (ca *batchCounterAlloc) AllocateCounters(n int) []uint32 {
 	const chunk = 8192
 	if n > cap(ca.pool) {
 		siz := chunk

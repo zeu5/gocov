@@ -16,16 +16,16 @@ import (
 // This file contains helpers for reading counter data files created
 // during the executions of a coverage-instrumented binary.
 
-type CounterDataReader struct {
-	stab     *SReader
+type counterDataReader struct {
+	stab     *sReader
 	args     map[string]string
 	osargs   []string
 	goarch   string // GOARCH setting from run that produced counter data
 	goos     string // GOOS setting from run that produced counter data
 	mr       io.ReadSeeker
-	hdr      CounterFileHeader
-	ftr      CounterFileFooter
-	shdr     CounterSegmentHeader
+	hdr      counterFileHeader
+	ftr      counterFileFooter
+	shdr     counterSegmentHeader
 	u32b     []byte
 	u8b      []byte
 	fcnCount uint32
@@ -33,8 +33,8 @@ type CounterDataReader struct {
 	debug    bool
 }
 
-func NewCounterDataReader(rs io.ReadSeeker) (*CounterDataReader, error) {
-	cdr := &CounterDataReader{
+func newCounterDataReader(rs io.ReadSeeker) (*counterDataReader, error) {
+	cdr := &counterDataReader{
 		mr:   rs,
 		u32b: make([]byte, 4),
 		u8b:  make([]byte, 1),
@@ -49,8 +49,8 @@ func NewCounterDataReader(rs io.ReadSeeker) (*CounterDataReader, error) {
 	if !checkMagic(cdr.hdr.Magic) {
 		return nil, fmt.Errorf("invalid magic string: not a counter data file")
 	}
-	if cdr.hdr.Version > CounterFileVersion {
-		return nil, fmt.Errorf("version data incompatibility: reader is %d data is %d", CounterFileVersion, cdr.hdr.Version)
+	if cdr.hdr.Version > counterFileVersion {
+		return nil, fmt.Errorf("version data incompatibility: reader is %d data is %d", counterFileVersion, cdr.hdr.Version)
 	}
 
 	// Read footer.
@@ -70,11 +70,11 @@ func NewCounterDataReader(rs io.ReadSeeker) (*CounterDataReader, error) {
 }
 
 func checkMagic(v [4]byte) bool {
-	g := CovCounterMagic
+	g := covCounterMagic
 	return v[0] == g[0] && v[1] == g[1] && v[2] == g[2] && v[3] == g[3]
 }
 
-func (cdr *CounterDataReader) readFooter() error {
+func (cdr *counterDataReader) readFooter() error {
 	ftrSize := int64(unsafe.Sizeof(cdr.ftr))
 	if _, err := cdr.mr.Seek(-ftrSize, io.SeekEnd); err != nil {
 		return err
@@ -93,7 +93,7 @@ func (cdr *CounterDataReader) readFooter() error {
 
 // readSegmentPreamble reads and consumes the segment header, segment string
 // table, and segment args table.
-func (cdr *CounterDataReader) readSegmentPreamble() error {
+func (cdr *counterDataReader) readSegmentPreamble() error {
 	// Read segment header.
 	if err := binary.Read(cdr.mr, binary.LittleEndian, &cdr.shdr); err != nil {
 		return err
@@ -126,7 +126,7 @@ func (cdr *CounterDataReader) readSegmentPreamble() error {
 	return nil
 }
 
-func (cdr *CounterDataReader) readStringTable() error {
+func (cdr *counterDataReader) readStringTable() error {
 	b := make([]byte, cdr.shdr.StrTabLen)
 	nr, err := cdr.mr.Read(b)
 	if err != nil {
@@ -135,13 +135,13 @@ func (cdr *CounterDataReader) readStringTable() error {
 	if nr != int(cdr.shdr.StrTabLen) {
 		return fmt.Errorf("error: short read on string table")
 	}
-	slr := NewReader(b, false /* not readonly */)
-	cdr.stab = NewSReader(slr)
+	slr := newReader(b, false /* not readonly */)
+	cdr.stab = newSReader(slr)
 	cdr.stab.Read()
 	return nil
 }
 
-func (cdr *CounterDataReader) readArgs() error {
+func (cdr *counterDataReader) readArgs() error {
 	b := make([]byte, cdr.shdr.ArgsLen)
 	nr, err := cdr.mr.Read(b)
 	if err != nil {
@@ -150,7 +150,7 @@ func (cdr *CounterDataReader) readArgs() error {
 	if nr != int(cdr.shdr.ArgsLen) {
 		return fmt.Errorf("error: short read on args table")
 	}
-	slr := NewReader(b, false /* not readonly */)
+	slr := newReader(b, false /* not readonly */)
 	sget := func() (string, error) {
 		kidx := slr.ReadULEB128()
 		if int(kidx) >= cdr.stab.Entries() {
@@ -200,7 +200,7 @@ func (cdr *CounterDataReader) readArgs() error {
 // for example, if a data file is produced by merging coverage
 // data from two distinct runs, no os args will be available (an
 // empty list is returned).
-func (cdr *CounterDataReader) OsArgs() []string {
+func (cdr *counterDataReader) OsArgs() []string {
 	return cdr.osargs
 }
 
@@ -208,7 +208,7 @@ func (cdr *CounterDataReader) OsArgs() []string {
 // that produced this counter data file. The GOOS value may be
 // empty in the case where the counter data file was produced
 // from a merge in which more than one GOOS value was present.
-func (cdr *CounterDataReader) Goos() string {
+func (cdr *counterDataReader) Goos() string {
 	return cdr.goos
 }
 
@@ -216,20 +216,20 @@ func (cdr *CounterDataReader) Goos() string {
 // that produced this counter data file. The GOARCH value may be
 // empty in the case where the counter data file was produced
 // from a merge in which more than one GOARCH value was present.
-func (cdr *CounterDataReader) Goarch() string {
+func (cdr *counterDataReader) Goarch() string {
 	return cdr.goarch
 }
 
-// FuncPayload encapsulates the counter data payload for a single
+// funcPayload encapsulates the counter data payload for a single
 // function as read from a counter data file.
-type FuncPayload struct {
+type funcPayload struct {
 	PkgIdx   uint32
 	FuncIdx  uint32
 	Counters []uint32
 }
 
 // NumSegments returns the number of execution segments in the file.
-func (cdr *CounterDataReader) NumSegments() uint32 {
+func (cdr *counterDataReader) NumSegments() uint32 {
 	return cdr.ftr.NumSegments
 }
 
@@ -237,7 +237,7 @@ func (cdr *CounterDataReader) NumSegments() uint32 {
 // returning TRUE if we do have another segment to read, or FALSE
 // if we're done with all the segments (also an error if
 // something went wrong).
-func (cdr *CounterDataReader) BeginNextSegment() (bool, error) {
+func (cdr *counterDataReader) BeginNextSegment() (bool, error) {
 	if cdr.segCount >= cdr.ftr.NumSegments {
 		return false, nil
 	}
@@ -257,7 +257,7 @@ func (cdr *CounterDataReader) BeginNextSegment() (bool, error) {
 
 // NumFunctionsInSegment returns the number of live functions
 // in the currently selected segment.
-func (cdr *CounterDataReader) NumFunctionsInSegment() uint32 {
+func (cdr *counterDataReader) NumFunctionsInSegment() uint32 {
 	return uint32(cdr.shdr.FcnEntries)
 }
 
@@ -268,13 +268,13 @@ const supportDeadFunctionsInCounterData = false
 // if we've read all the functions already (also an error if
 // something went wrong with the read or we hit a premature
 // EOF).
-func (cdr *CounterDataReader) NextFunc(p *FuncPayload) (bool, error) {
+func (cdr *counterDataReader) NextFunc(p *funcPayload) (bool, error) {
 	if cdr.fcnCount >= uint32(cdr.shdr.FcnEntries) {
 		return false, nil
 	}
 	cdr.fcnCount++
 	var rdu32 func() (uint32, error)
-	if cdr.hdr.CFlavor == CtrULeb128 {
+	if cdr.hdr.CFlavor == ctrULeb128 {
 		rdu32 = func() (uint32, error) {
 			var shift uint
 			var value uint64
@@ -292,7 +292,7 @@ func (cdr *CounterDataReader) NextFunc(p *FuncPayload) (bool, error) {
 			}
 			return uint32(value), nil
 		}
-	} else if cdr.hdr.CFlavor == CtrRaw {
+	} else if cdr.hdr.CFlavor == ctrRaw {
 		if cdr.hdr.BigEndian {
 			rdu32 = func() (uint32, error) {
 				n, err := cdr.mr.Read(cdr.u32b)

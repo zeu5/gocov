@@ -5,22 +5,22 @@ package gocov
 // counter-data files.
 // Reader is a helper for reading a string table previously
 // serialized by a Writer.Write call.
-type SReader struct {
-	r    *Reader
+type sReader struct {
+	r    *reader
 	strs []string
 }
 
 // NewReader creates a stringtab.Reader to read the contents
 // of a string table from 'r'.
-func NewSReader(r *Reader) *SReader {
-	str := &SReader{
+func newSReader(r *reader) *sReader {
+	str := &sReader{
 		r: r,
 	}
 	return str
 }
 
 // Read reads/decodes a string table using the reader provided.
-func (str *SReader) Read() {
+func (str *sReader) Read() {
 	numEntries := int(str.r.ReadULEB128())
 	str.strs = make([]string, 0, numEntries)
 	for idx := 0; idx < numEntries; idx++ {
@@ -30,16 +30,16 @@ func (str *SReader) Read() {
 }
 
 // Entries returns the number of decoded entries in a string table.
-func (str *SReader) Entries() int {
+func (str *sReader) Entries() int {
 	return len(str.strs)
 }
 
 // Get returns string 'idx' within the string table.
-func (str *SReader) Get(idx uint32) string {
+func (str *sReader) Get(idx uint32) string {
 	return str.strs[idx]
 }
 
-func AppendUleb128(b []byte, v uint) []byte {
+func appendUleb128(b []byte, v uint) []byte {
 	for {
 		c := uint8(v & 0x7f)
 		v >>= 7

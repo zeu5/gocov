@@ -8,7 +8,7 @@ import "bytes"
 
 type PodData struct {
 	CounterGranularity CounterGranularity
-	CounterMode        CounterMode
+	CounterMode        counterMode
 	// Number of functions in each package
 	Packages map[uint32]*Package
 }
@@ -45,10 +45,10 @@ func ReadDir(dir string, matchPkgs []string) (*CoverageData, error) {
 	}
 
 	vis := &covDataVisitor{
-		cm:   &Merger{},
+		cm:   &merger{},
 		data: data,
 	}
-	reader := MakeCovDataDirReader(vis, dir, matchPkgs...)
+	reader := makeCovDataDirReader(vis, dir, matchPkgs...)
 	err := reader.Visit()
 	if err != nil {
 		return nil, err
@@ -62,10 +62,10 @@ func ReadFromBuffer(meta, counters *bytes.Buffer, matchPkgs []string) (*Coverage
 	}
 
 	vis := &covDataVisitor{
-		cm:   &Merger{},
+		cm:   &merger{},
 		data: data,
 	}
-	reader := MakeCovDataBufferReader(vis, counters, meta, matchPkgs...)
+	reader := makeCovDataBufferReader(vis, counters, meta, matchPkgs...)
 	err := reader.Visit()
 	if err != nil {
 		return nil, err

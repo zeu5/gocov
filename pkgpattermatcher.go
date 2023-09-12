@@ -9,14 +9,14 @@ import (
 	"strings"
 )
 
-// MatchSimplePattern returns a function that can be used to check
+// matchSimplePattern returns a function that can be used to check
 // whether a given name matches a pattern, where pattern is a limited
 // glob pattern in which '...' means 'any string', with no other
 // special syntax. There is one special case for MatchPatternSimple:
 // according to the rules in "go help packages": a /... at the end of
 // the pattern can match an empty string, so that net/... matches both
 // net and packages in its subdirectories, like net/http.
-func MatchSimplePattern(pattern string, toMatch string) bool {
+func matchSimplePattern(pattern string, toMatch string) bool {
 	// Convert pattern to regular expression.
 	// The strategy for the trailing /... is to nest it in an explicit ? expression.
 	// The strategy for the vendor exclusion is to change the unmatchable
