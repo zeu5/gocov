@@ -17,5 +17,4 @@ Tightly coupled with the encoding format of the Coverage information. i.e. The g
 ## TODO
 
 - [ ] Need to add a version check
-- [ ] Update with API to read summaries (percent, profiles, line count)
 - [ ] Merge and diff `CoverageData`
