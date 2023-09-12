@@ -9,7 +9,7 @@ import (
 
 type Coverage struct {
 	config CoverageConfig
-	data   *CoverageData
+	Data   *CoverageData
 }
 
 type CoverageConfig struct {
@@ -32,7 +32,7 @@ func GetCoverage(c CoverageConfig) (*Coverage, error) {
 		}
 		return &Coverage{
 			config: c,
-			data:   data,
+			Data:   data,
 		}, nil
 	} else {
 		var rawCounters bytes.Buffer
@@ -52,14 +52,14 @@ func GetCoverage(c CoverageConfig) (*Coverage, error) {
 
 		return &Coverage{
 			config: c,
-			data:   data,
+			Data:   data,
 		}, nil
 	}
 }
 
 func (c *Coverage) GetProfiles() []cover.Profile {
 	fileProfiles := make(map[string]cover.Profile)
-	for _, p := range c.data.PodData {
+	for _, p := range c.Data.PodData {
 		for _, pack := range p.Packages {
 			for _, fn := range pack.Funcs {
 				if _, ok := fileProfiles[fn.SrcFile]; !ok {
@@ -98,7 +98,7 @@ func (c *Coverage) GetProfiles() []cover.Profile {
 func (c *Coverage) GetPercent() float64 {
 	totalStmts := 0
 	covered := 0
-	for _, p := range c.data.PodData {
+	for _, p := range c.Data.PodData {
 		for _, pack := range p.Packages {
 			for _, fn := range pack.Funcs {
 				for _, u := range fn.Units {
