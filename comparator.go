@@ -51,7 +51,7 @@ func (cur *CoverageData) Merge(other *CoverageData) {
 			continue
 		}
 		for packName, pack := range p.Packages {
-			if _, ok := cur.PodData[pName]; !ok {
+			if _, ok := cur.PodData[pName].Packages[packName]; !ok {
 				cur.PodData[pName].Packages[packName] = pack
 				continue
 			}
@@ -61,20 +61,20 @@ func (cur *CoverageData) Merge(other *CoverageData) {
 					continue
 				}
 				curUnits := cur.PodData[pName].Packages[packName].Funcs[fName].Units
-				unitMap := make(map[funit]mcount)
+				unitMap := make(map[funit]*mcount)
 
 				for _, u := range curUnits {
 					uKey := funit{u.StLine, u.EnLine, u.StCol, u.EnCol, u.NxStmts}
-					unitMap[uKey] = mcount{cur: u.Count}
+					unitMap[uKey] = &mcount{cur: u.Count}
 				}
 
 				for _, u := range f.Units {
 					uKey := funit{u.StLine, u.EnLine, u.StCol, u.EnCol, u.NxStmts}
 					count, ok := unitMap[uKey]
 					if !ok {
-						unitMap[uKey] = mcount{new: u.Count}
+						unitMap[uKey] = &mcount{new: u.Count}
 					} else {
-						unitMap[uKey] = mcount{cur: count.cur, new: u.Count}
+						count.new = u.Count
 					}
 				}
 

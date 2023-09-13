@@ -31,7 +31,8 @@ type covDataVisitor struct {
 	// where package N only has 3 functions).
 	pkm map[uint32]uint32
 
-	podHash string
+	podHash   string
+	matchPkgs []string
 
 	data *CoverageData
 }
@@ -96,10 +97,15 @@ func (d *covDataVisitor) VisitMetaDataFile(mfr *coverageMetaFileReader) error {
 		}
 		d.pkm[pkIdx] = pd.NumFuncs()
 
-		podData.Packages[pkIdx] = &Package{
-			ID:       pkIdx,
-			NumFuncs: pd.NumFuncs(),
-			Funcs:    make(map[uint32]*Func),
+		if d.matchPkg(pd.PackagePath()) {
+			podData.Packages[pkIdx] = &Package{
+				ID:         pkIdx,
+				ImportPath: pd.PackagePath(),
+				ModulePath: pd.ModulePath(),
+				Name:       pd.PackageName(),
+				NumFuncs:   pd.NumFuncs(),
+				Funcs:      make(map[uint32]*Func),
+			}
 		}
 	}
 	return nil
@@ -150,4 +156,16 @@ func (d *covDataVisitor) VisitFunc(pkgIdx uint32, fnIdx uint32, fd *funcDesc) {
 			Count:   count,
 		}
 	}
+}
+
+func (d *covDataVisitor) matchPkg(path string) bool {
+	if len(d.matchPkgs) == 0 {
+		return true
+	}
+	for _, p := range d.matchPkgs {
+		if matchSimplePattern(p, path) {
+			return true
+		}
+	}
+	return false
 }

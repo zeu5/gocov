@@ -114,3 +114,20 @@ func (c *Coverage) GetPercent() float64 {
 
 	return 100 * float64(covered) / float64(totalStmts)
 }
+
+func (c *Coverage) GetCoveredLines() int {
+	covered := 0
+	for _, p := range c.Data.PodData {
+		for _, pack := range p.Packages {
+			for _, fn := range pack.Funcs {
+				for _, u := range fn.Units {
+					nx := int(u.NxStmts)
+					if u.Count != 0 {
+						covered += nx
+					}
+				}
+			}
+		}
+	}
+	return covered
+}
