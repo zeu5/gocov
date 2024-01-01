@@ -2,6 +2,7 @@ package gocov
 
 import (
 	"bytes"
+	"os"
 	"runtime/coverage"
 
 	"golang.org/x/tools/cover"
@@ -55,6 +56,11 @@ func GetCoverage(c CoverageConfig) (*Coverage, error) {
 			Data:   data,
 		}, nil
 	}
+}
+
+func (c *Coverage) Reset() error {
+	c.Data = nil
+	return os.RemoveAll(c.config.UseDir)
 }
 
 func (c *Coverage) GetProfiles() []cover.Profile {
